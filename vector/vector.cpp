@@ -1,4 +1,6 @@
 #include <iostream>
+#include <memory>
+
 
 template<class T>
 class Vec
@@ -29,13 +31,13 @@ public:
         {
             if(capacity == 0) capacity = 20 ;
             else capacity *= 2 ;
-            T* tmp = new T[capacity] ;
-            for(int i = 0 ; i < size ; ++i) tmp[i] = ptr[i] ;
-            if(ptr) delete[] ptr ;
-            ptr = tmp ;
+            std::unique_ptr<T[]> tmp = std::unique_ptr<T[]>(new T[capacity]) ;
+            for(int i = 0 ; i < size ; ++i) tmp.get()[i] = ptr.get()[i] ;
+            //if(ptr) delete[] ptr ;
+            ptr = std::move(tmp) ;
             tmp = nullptr ; //prevent delete.
         }
-        ptr[size] = val ;
+        ptr.get()[size] = val ;
         ++size ;
 
     }
@@ -57,15 +59,16 @@ public:
         if(idx >= size) 
         {
             std::cout << "invalid access element" << std::endl ;
-            return ptr[size+1] ;
+            return ptr.get()[size+1] ;
         }
         else
-            return ptr[idx] ;
+            return ptr.get()[idx] ;
     }
-    inline T* begin() const {return ptr ;} 
-    inline T* end() const {return ptr[size+1] ;} ;
+    inline T* begin() const {return ptr.get() ;} 
+    inline T* end() const {return ptr.get()[size+1] ;} ;
 private:
-    T* ptr ;
+    //T* ptr ;
+    std::unique_ptr<T[]> ptr ;
     size_t size  ;
     size_t capacity ;
 } ;
@@ -73,7 +76,7 @@ private:
 template<class T>
 Vec<T>::Vec()
 { 
-    ptr = new T[20]; 
+    ptr = std::unique_ptr<T[]>(new T[20]); 
     capacity = 20 ;
     size = 0 ;
 }
@@ -81,7 +84,7 @@ Vec<T>::Vec()
 template<class T>
 Vec<T>::Vec(size_t len)
 {
-     ptr = new T[len] ; 
+     ptr = std::unique_ptr<T[]>(new T[len]) ; 
      size = 0 ;
      capacity = len ;
 }
@@ -89,36 +92,55 @@ Vec<T>::Vec(size_t len)
 template<class T>
 Vec<T>::Vec(size_t len, const T& val)
     {
-        ptr = new T[len*2] ;
+        ptr = std::unique_ptr<T[]>(new T[len*2]) ;
         size = len ;
         capacity = len*2 ;
-        for(int i = 0 ; i < size ; ++i) ptr[i] = val ;
+        for(int i = 0 ; i < size ; ++i) ptr.get()[i] = val ;
     } 
 
 template<class T>
 Vec<T>::~Vec()
 { 
-    delete[] ptr ; /***/
+    //delete[] ptr ; /***/
 } 
 
     /***/
 template<class T>
 Vec<T>::Vec(const Vec<T>& right) 
     {
-        delete[] ptr ; /***/
-        ptr = new T[right.capacity] ;
+        ptr = std::unique_ptr<T[]>(new T[right.capacity]);
         size = right.size ;
-        for(int i = 0 ; i < size ; ++i) ptr[i] = right[i] ;
+        capacity = right.capacity ;
+        for(int i = 0 ; i < size ; ++i) ptr.get()[i] = right.ptr.get()[i] ;
     }
 
     /***/
 template<class T>
-Vec<T>& Vec<T>::operator =(const Vec<T>& right) 
+Vec<T>& Vec<T>::operator=(const Vec<T>& right) 
     {
-        if(this == &right) return *this ; /***/
-        delete[] ptr ; /***/
-        ptr = new T[right.capacity] ;
+        //if(this == &right) return *this ; /***/
+        //if(ptr) delete[] ptr ; /***/
+        ptr = std::unique_ptr<T[]>(new T[right.capacity]) ;
         size = right.size ;
-        for(int i = 0 ; i < size ; ++i) ptr[i] = right[i] ;
+        for(int i = 0 ; i < size ; ++i) ptr.get()[i] = right.ptr.get()[i] ;
         return *this ; /***/
     }
+
+template<class T>
+Vec<T>::Vec(Vec<T>&& right)
+{
+    swap(this->ptr, right->prt) ;
+    //right->ptr = nullptr ;
+    swap(this->capacity, right->capacity) ;
+    swap(this->size, right->size) ;
+}
+
+template<class T>
+Vec<T>& Vec<T>::operator=(Vec<T>&& right)
+{
+    swap(this->ptr, right->prt) ;
+    //right->ptr = nullptr ;
+    swap(this->capacity, right->capacity) ;
+    swap(this->size, right->size) ;
+}
+

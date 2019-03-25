@@ -40,6 +40,20 @@ TEST(Vec, push_back)
     
 }
 
+TEST(Vec, copy_constructor)
+{
+    //arrange
+    Vec<string> v2(20, "val") ; 
+
+    //act
+    Vec<string> v2c(v2) ;
+    Vec<string> v2ac = v2c ;
+
+    //assert
+    EXPECT_EQ(v2[5] , v2c[5]) ;
+    EXPECT_EQ(v2[5] , v2ac[5]) ;
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv) ;
